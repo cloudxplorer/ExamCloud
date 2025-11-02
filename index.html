@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>ExamCloud</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="header">
+    <div class="header-content">
+      <a href="index.html" class="logo">ExamCloud</a>
+      <div class="nav-links">
+        <a href="index.html" class="nav-link">Create Exam</a>
+        <a href="results.html" class="nav-link">Results</a>
+        <div class="user-info">
+          <span class="user-email" id="user-email">Loading...</span>
+          <button id="logout-btn" class="btn small">Logout</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <div class="container">
+      <h1>Create MCQ Exam</h1>
+      
+      <label>Exam Title</label>
+      <input id="exam-title" placeholder="e.g., Math Quiz" />
+
+      <label>Duration (minutes)</label>
+      <input id="exam-duration" type="number" min="1" value="30" />
+
+      <div class="row" style="margin-top:16px; gap:12px;">
+        <button id="mode-manual" class="btn active-mode">Enter Questions Manually</button>
+        <button id="mode-json" class="btn ghost">Upload JSON File</button>
+      </div>
+
+      <div id="manual-section" class="input-section">
+        <div id="questions-container"></div>
+        <button id="add-question" class="btn ghost" style="margin-top:12px;">+ Add Question</button>
+      </div>
+
+      <div id="json-section" class="input-section" style="display:none;">
+        <label>Upload questions.json</label>
+        <div class="file-upload-container">
+          <div class="file-upload-btn">Choose JSON File</div>
+          <input id="file-input" type="file" accept=".json" class="file-input" />
+        </div>
+        <div id="file-name" class="file-name">No file chosen</div>
+        <p class="muted" style="margin-top:6px;">Format: array of { "question", "options"[], "answer", "explanation" }</p>
+      </div>
+
+      <div class="row" style="margin-top:20px;">
+        <button id="save-btn" class="btn">Save & Generate Short Link</button>
+        <button id="preview-btn" class="btn ghost">Preview Exam</button>
+      </div>
+
+      <div id="link-area" style="display:none; margin-top:20px; padding-top:16px; border-top:1px solid #eee;">
+        <p>Share this short link with students:</p>
+        <input id="share-link" readonly />
+        <button id="copy-btn" class="btn small">Copy Link</button>
+        <div id="shorten-status" class="muted" style="margin-top:6px;"></div>
+      </div>
+
+      <hr style="margin:24px 0;"/>
+      
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h3 style="margin: 0;">Your Exams</h3>
+        <button id="delete-all-btn" class="btn red small">Delete All My Exams</button>
+      </div>
+      
+      <div id="exams-list">Loading...</div>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-content">
+      <p>&copy; 2025 ExamCloud by Pallavi Thakur. All Rights Reserved.</p>
+    </div>
+  </footer>
+
+  <div id="delete-modal" class="modal">
+    <div class="modal-content">
+      <h3>Confirm Delete</h3>
+      <p>Are you sure you want to delete all your exams and results? This action cannot be undone.</p>
+      <div style="margin-top:16px; display:flex; gap:10px; justify-content: center;">
+        <button id="confirm-delete" class="btn red">Yes, Delete All</button>
+        <button id="cancel-delete" class="btn ghost">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script src="create.js"></script>
+</body>
+</html>

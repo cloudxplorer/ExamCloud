@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>ExamCloud</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="header">
+    <div class="header-content">
+      <a href="auth.html" class="logo">ExamCloud</a>
+      <div class="nav-links">
+        <a href="auth.html" class="nav-link">Home</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <div class="auth-container">
+      <div class="auth-tabs">
+        <button class="auth-tab active" data-tab="login">Login</button>
+        <button class="auth-tab" data-tab="signup">Sign Up</button>
+      </div>
+
+      <form id="login-form" class="auth-form active">
+        <h2>Welcome Back</h2>
+        <label>Email</label>
+        <input type="email" id="login-email" placeholder="your@email.com" required>
+        
+       <label>Password</label>
+<div style="position:relative; display:inline-block; width:100%;">
+  <input type="password" id="login-password" placeholder="your password" required>
+  <span style="position:absolute; right:1.25rem; top:50%; transform:translateY(-50%); cursor:pointer; color:#666; font-size:14px;" 
+        onclick="const input=this.previousElementSibling;input.type=input.type==='password'?'text':'password';this.textContent=input.type==='password'?'Show':'Hide'">
+    Show
+  </span>
+</div>
+        
+        <button type="submit" class="btn" style="width: 100%; margin-top: 1rem;">Login</button>
+        <div id="login-message" class="muted" style="margin-top: 1rem;"></div>
+      </form>
+
+      <form id="signup-form" class="auth-form">
+        <h2>Create Account</h2>
+        <label>Full Name</label>
+        <input type="text" id="signup-name" placeholder="Your Name" required>
+        
+        <label>Email</label>
+        <input type="email" id="signup-email" placeholder="your@email.com" required>
+        
+        <label>Password</label>
+<div style="position:relative; display:inline-block; width:100%;">
+  <input type="password" id="signup-password" placeholder="your password" minlength="6" required>
+  <span style="position:absolute; right:1.25rem; top:50%; transform:translateY(-50%); cursor:pointer; color:#666; font-size:14px;" 
+        onclick="const input=this.previousElementSibling;input.type=input.type==='password'?'text':'password';this.textContent=input.type==='password'?'Show':'Hide'">
+    Show
+  </span>
+</div>
+        
+        <button type="submit" class="btn" style="width: 100%; margin-top: 1rem;">Create Account</button>
+        <div id="signup-message" class="muted" style="margin-top: 1rem;"></div>
+      </form>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-content">
+      <p>&copy; 2025 ExamCloud by Pallavi Thakur. All Rights Reserved.</p>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script src="auth.js"></script>
+</body>
+</html>

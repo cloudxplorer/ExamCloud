@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="en">  
+<head>  
+  <meta charset="utf-8" />  
+  <meta name="viewport" content="width=device-width,initial-scale=1" />  
+  <title>ExamCloud Results</title>  
+  <link rel="stylesheet" href="style.css">  
+  <style>  
+    .result-card {  
+      background: #f9f0ff; padding: 16px; border-radius: 12px; margin-top: 12px;  
+      border-left: 4px solid var(--primary);  
+    }  
+    .filters { margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap; }  
+    .filters input, .filters select { padding: 8px; border-radius: 8px; border: 1px solid #e0c2ff; }  
+    .cheating-flag { color: var(--danger); font-weight: bold; }  
+  </style>  
+</head>  
+<body>  
+  <header class="header">
+    <div class="header-content">
+      <a href="index.html" class="logo">ExamCloud</a>
+      <div class="nav-links">
+        <a href="index.html" class="nav-link">Create Exam</a>
+        <a href="results.html" class="nav-link">Results</a>
+        <div class="user-info">
+          <span class="user-email" id="user-email">Loading...</span>
+          <button id="logout-btn" class="btn small">Logout</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <div class="container">  
+      <h1>Exam Results Dashboard</h1>  
+      <div class="filters">  
+        <input type="text" id="search-name" placeholder="Search by name..." />  
+        <select id="exam-filter">  
+          <option value="">All Exams</option>  
+        </select>  
+        <button id="refresh-btn" class="btn small">Refresh</button>  
+        <button id="delete-all-results-btn" class="btn red small">Delete All Results</button>
+      </div>  
+
+      <div id="results-container">Loading results...</div>  
+      <div id="no-results" style="display:none; text-align:center; margin-top:30px; color:var(--muted);">  
+        No results found.  
+      </div>
+    </div>    
+  </main>
+
+  <footer class="footer">
+    <div class="footer-content">
+      <p>&copy; 2025 ExamCloud by Pallavi Thakur. All Rights Reserved.</p>
+    </div>
+  </footer>
+
+  <div id="delete-modal" class="modal">
+    <div class="modal-content">
+      <h3>Confirm Delete</h3>
+      <p>Are you sure you want to delete all your exam results? This action cannot be undone.</p>
+      <div style="margin-top:16px; display:flex; gap:10px; justify-content: center;">
+        <button id="confirm-delete" class="btn red">Yes, Delete All</button>
+        <button id="cancel-delete" class="btn ghost">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>    
+  <script src="config.js"></script>    
+  <script>  
+    document.addEventListener('DOMContentLoaded', async () => {
+      await checkAuthentication();
+      
+      const resultsContainer = document.getElementById('results-container');  
+      const noResultsEl = document.getElementById('no-results');  
+      const searchInput = document.getElementById('search-name');  
+      const examFilter = document.getElementById('exam-filter');  
+      const refreshBtn = document.getElementById('refresh-btn');  
+      const deleteAllResultsBtn = document.getElementById('delete-all-results-btn');
+      const deleteModal = document.getElementById('delete-modal');
+      const confirmDelete = document.getElementById('confirm-delete');
+      const cancelDelete = document.getElementById('cancel-delete');
+  
+      async function checkAuthentication() {
+        try {
+          const { data: { user } } = await window.AUTH.getCurrentUser();
+          if (!user) {
+            window.location.href = 'auth.html';
+            return;
+          }
+          
+          document.getElementById('user-email').textContent = user.email;
+          
+          document.getElementById('logout-btn').addEventListener('click', async () => {
+            try {
+              await window.AUTH.signOut();
+              window.location.href = 'auth.html';
+            } catch (error) {
+              alert('Logout failed: ' + error.message);
+            }
+          });
+          
+          return user;
+        } catch (error) {
+          window.location.href = 'auth.html';
+        }
+      }
+
+      const downloadPdfBtn = document.createElement('button');  
+      downloadPdfBtn.className = 'btn green';  
+      downloadPdfBtn.textContent = 'Download All Results (PDF)';  
+      downloadPdfBtn.style.marginTop = '16px';  
+      downloadPdfBtn.addEventListener('click', generateResultsPdf);  
+      document.querySelector('.filters').appendChild(downloadPdfBtn);  
+  
+      async function loadExamsForFilter() {  
+        if (!window.SUPABASE) return;  
+        
+        const { data: { user } } = await window.AUTH.getCurrentUser();
+        if (!user) return;
+        
+        const { data } = await window.SUPABASE  
+          .from('exams')  
+          .select('id, title')  
+          .eq('teacher_id', user.id)
+          .order('created_at', { ascending: false });  
+        examFilter.innerHTML = '<option value="">All Exams</option>';  
+        data.forEach(ex => {  
+          const opt = document.createElement('option');  
+          opt.value = ex.id;  
+          opt.textContent = ex.title;  
+          examFilter.appendChild(opt);  
+        });  
+      }  
+  
+      async function fetchResults() {  
+        if (!window.SUPABASE) {  
+          resultsContainer.innerHTML = '<div class="muted">Supabase not configured.</div>';  
+          return;  
+        }  
+
+        const { data: { user } } = await window.AUTH.getCurrentUser();
+        if (!user) return;
+  
+        let query = window.SUPABASE  
+          .from('results')  
+          .select(`  
+            *,  
+            exam:exam_id (title)  
+          `)  
+          .eq('teacher_id', user.id)
+          .order('created_at', { ascending: false });  
+  
+        const nameFilter = searchInput.value.trim();  
+        const examIdFilter = examFilter.value;  
+  
+        if (nameFilter) {  
+          query = query.ilike('student_name', `%${nameFilter}%`);  
+        }  
+        if (examIdFilter) {  
+          query = query.eq('exam_id', examIdFilter);  
+        }  
+  
+        const { data, error } = await query;  
+  
+        if (error) {  
+          resultsContainer.innerHTML = `<div class="muted">Error: ${error.message}</div>`;  
+          noResultsEl.style.display = 'none';  
+          return;  
+        }  
+  
+        window.CACHED_RESULTS = data;  
+        renderResults(data);  
+      }  
+  
+      function renderResults(data) {  
+        if (!data || data.length === 0) {  
+          resultsContainer.innerHTML = '';  
+          noResultsEl.style.display = 'block';  
+          return;  
+        }  
+  
+        noResultsEl.style.display = 'none';  
+        resultsContainer.innerHTML = data.map(r => `  
+          <div class="result-card">  
+            <div><strong>${escapeHtml(r.student_name)}</strong></div>  
+            <div>Exam: ${escapeHtml(r.exam?.title || '—')}</div>  
+            <div>Score: <strong>${r.score}/${r.total_questions}</strong> (${r.percent}%)</div>  
+            <div>Rating: ${escapeHtml(r.rating)}</div>  
+            <div>Submitted: ${new Date(r.created_at).toLocaleString()}</div>  
+            ${r.cheating_attempts > 0 ?   
+              `<div class="cheating-flag">Cheating attempts: ${r.cheating_attempts}</div>` : ''}  
+          </div>  
+        `).join('');  
+      }  
+
+      async function deleteAllResults() {
+        const { data: { user } } = await window.AUTH.getCurrentUser();
+        if (!user) return;
+
+        const { error } = await window.SUPABASE
+          .from('results')
+          .delete()
+          .eq('teacher_id', user.id);
+
+        if (error) {
+          alert('Delete failed: ' + error.message);
+        } else {
+          alert('All results deleted successfully');
+          fetchResults();
+        }
+      }
+  
+      function escapeHtml(s) {  
+        return (s || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));  
+      }  
+  
+      async function generateResultsPdf() {  
+        if (!window.CACHED_RESULTS || window.CACHED_RESULTS.length === 0) {  
+          alert('No results to download.');  
+          return;  
+        }  
+  
+        await new Promise((resolve) => {  
+          if (window.html2pdf) return resolve();  
+          const script = document.createElement('script');  
+          script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js';  
+          script.onload = resolve;  
+          document.head.appendChild(script);  
+        });  
+  
+        const printDiv = document.createElement('div');  
+        printDiv.style.padding = '20px';  
+        printDiv.style.fontFamily = 'Arial, sans-serif';  
+        printDiv.innerHTML = `  
+          <div style="text-align:center; margin-bottom:30px; border-bottom:2px solid #8e44ad; padding-bottom:20px;">  
+            <h1 style="color:#8e44ad; margin:0;">ExamCloud University</h1>  
+            <p style="color:#6c3483; margin:8px 0;">ExamCloud Report Card</p>  
+            <p style="margin-top:10px; color:#555;">Generated on ${new Date().toLocaleString()}</p>  
+          </div>  
+          <table style="width:100%; border-collapse:collapse; margin-top:20px;">  
+            <thead>  
+              <tr style="background:#f0e6ff;">  
+                <th style="border:1px solid #ddd; padding:10px; text-align:left;">Student Name</th>  
+                <th style="border:1px solid #ddd; padding:10px; text-align:left;">Exam</th>  
+                <th style="border:1px solid #ddd; padding:10px; text-align:left;">Score</th>  
+                <th style="border:1px solid #ddd; padding:10px; text-align:left;">Rating</th>  
+                <th style="border:1px solid #ddd; padding:10px; text-align:left;">Cheating Attempts</th>  
+                <th style="border:1px solid #ddd; padding:10px; text-align:left;">Date</th>  
+              </tr>  
+            </thead>  
+            <tbody>  
+              ${window.CACHED_RESULTS.map(r => `  
+                <tr>  
+                  <td style="border:1px solid #ddd; padding:10px;">${escapeHtml(r.student_name)}</td>  
+                  <td style="border:1px solid #ddd; padding:10px;">${escapeHtml(r.exam?.title || '—')}</td>  
+                  <td style="border:1px solid #ddd; padding:10px;">${r.score}/${r.total_questions} (${r.percent}%)</td>  
+                  <td style="border:1px solid #ddd; padding:10px;">${escapeHtml(r.rating)}</td>  
+                  <td style="border:1px solid #ddd; padding:10px; color:${r.cheating_attempts > 0 ? '#e74c3c' : 'inherit'};">  
+                    ${r.cheating_attempts}  
+                  </td>  
+                  <td style="border:1px solid #ddd; padding:10px;">${new Date(r.created_at).toLocaleDateString()}</td>  
+                </tr>  
+              `).join('')}  
+            </tbody>  
+          </table>  
+          <div style="margin-top:40px; text-align:center; color:#7f7f7f; font-size:12px;">  
+            Wish You All the Best For Future.  
+          </div>  
+        `;  
+  
+        const opt = {  
+          margin: 10,  
+          filename: `Exam_Results_${new Date().toISOString().slice(0,10)}.pdf`,  
+          image: { type: 'jpeg', quality: 0.98 },  
+          html2canvas: { scale: 2 },  
+          jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }  
+        };  
+  
+        html2pdf().set(opt).from(printDiv).save();  
+      }  
+
+      deleteAllResultsBtn.addEventListener('click', () => {
+        deleteModal.style.display = 'flex';
+      });
+
+      confirmDelete.addEventListener('click', async () => {
+        deleteModal.style.display = 'none';
+        await deleteAllResults();
+      });
+
+      cancelDelete.addEventListener('click', () => {
+        deleteModal.style.display = 'none';
+      });
+
+      deleteModal.addEventListener('click', (e) => {
+        if (e.target === deleteModal) {
+          deleteModal.style.display = 'none';
+        }
+      });
+  
+      loadExamsForFilter();  
+      fetchResults();  
+  
+      searchInput.addEventListener('input', fetchResults);  
+      examFilter.addEventListener('change', fetchResults);  
+      refreshBtn.addEventListener('click', fetchResults);  
+    });  
+  </script>  
+</body>  
+</html>

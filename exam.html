@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">  
+<head>  
+  <meta charset="utf-8" />  
+  <meta name="viewport" content="width=device-width,initial-scale=1" />  
+  <title>ExamCloud</title>  
+  <link rel="stylesheet" href="style.css">  
+</head>  
+<body>  
+  <header class="header">
+    <div class="header-content">
+      <a href="auth.html" class="logo">ExamCloud</a>
+      <div class="nav-links">
+        <span class="user-email" id="student-info">ExamCloud Student</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <div class="container" id="main-container">  
+      <h1 id="exam-title">Loading exam...</h1>  
+      <div id="entry-area">  
+        <label for="student-name"><strong>Enter Your Name</strong></label>  
+        <input id="student-name" type="text" placeholder="Full name" />  
+        <div style="margin-top:12px;">  
+          <button id="start-btn" class="btn">Start Exam</button>  
+        </div>  
+      </div>  
+
+      <div id="quiz-area" style="display:none;">  
+        <div id="timer-overlay"></div>  
+        <div id="quiz-container"></div>  
+
+        <div style="margin-top:16px;">  
+          <button id="submit-btn" class="btn">Submit</button>  
+          <button id="download-btn" class="btn green" style="display:none;">Download PDF</button>  
+        </div>  
+
+        <div id="result-container"></div>  
+      </div>
+    </div>    
+  </main>
+
+  <footer class="footer">
+    <div class="footer-content">
+      <p>&copy; 2025 ExamCloud by Pallavi Thakur. All Rights Reserved.</p>
+    </div>
+  </footer>
+
+  <div id="cheating-overlay" class="cheating-overlay hidden"></div>    
+  <div id="confirm-modal" class="modal">
+    <div class="modal-content">
+      <h3>Confirm Submission</h3>
+      <p>Are you sure you want to submit your exam?</p>
+      <div style="margin-top:16px; display:flex; gap:10px; justify-content: center;">
+        <button id="confirm-yes" class="btn">Yes, Submit</button>
+        <button id="confirm-no" class="btn ghost">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>    
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js"></script>    
+  <script src="config.js"></script>    
+  <script src="exam.js"></script>  
+</body>  
+</html>
